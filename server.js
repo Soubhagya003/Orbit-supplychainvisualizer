@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const seedDb = require('./seeder');
+const redis = require('./config/redis');
 
 const authRoutes = require('./routes/auth.routes');
 const nodeRoutes = require('./routes/node.routes');
@@ -13,6 +14,7 @@ const shipmentRoutes = require('./routes/shipment.routes');
 const analyticsRoutes = require('./routes/analytics.routes');
 
 const app = express();
+app.set('trust proxy',1);
 const PORT = process.env.PORT || 8080;
 
 // CORS configuration
@@ -29,6 +31,9 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+const limiter = require('./middleware/rateLimiter');
+app.use(limiter);
 
 // Mount API routes
 app.use('/api/auth', authRoutes);

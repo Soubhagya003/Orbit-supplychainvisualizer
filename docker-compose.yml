@@ -1,0 +1,76 @@
+
+
+services:
+
+  app:
+    build: . # build an image using the Dockerfile present in the current directory(.),here . means supplychain/
+    #docker will execute - docker build .
+    container_name: supplychain-api
+
+    #ports:
+      #- "8080:8080"  
+
+    expose:
+    - "8080" #don't publish this port outside docker,only other docker containers can reach it,not my computer
+
+    depends_on:
+      - mongo  #start mongo first,then start app
+              #bcz when app starts it immediately runs mongoose.connect(....)
+              #dont necesaarily means wait untill mongo is finished
+
+    env_file:
+      - .env
+
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+
+    container_name: supplychain-mongo
+
+    ports:
+      - "27017:27017"
+
+    volumes:
+      - mongo-data:/data/db #meaning-> whenever Mongo writes into /data/db,actually store those files in docker volume named mongo-data
+       #mongo-data ->persistent storage area(like a hard drive)  outside of container provided by docker where mongo stores all its data
+
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+
+    container_name: supplychain-redis
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis-data:/data
+
+    restart: unless-stopped
+  
+  nginx:
+    image: nginx:alpine
+
+    container_name: supplychain-nginx
+
+    ports:
+      - "80:80"
+
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+        #this is actual file on my computer ,mounted(copied) on /etc/nginx/nginx.conf(location inside Nginx container)
+        #"Whenever Nginx reads /etc/nginx/nginx.conf, actually use the file from your project: ./nginx/nginx.conf."
+        #ro -> read only,So if Nginx tried to modify /etc/nginx/nginx.conf, Docker would refuse because the mount is read-only.
+        # look at ./ -> means use the file that's already on my computer,this is not named volume like mongo-data,redis-data
+              #so no need to write in volumes 
+    depends_on:
+      - app
+
+    restart: unless-stopped
+
+volumes:
+
+  mongo-data:
+  redis-data:
