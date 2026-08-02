@@ -5,7 +5,7 @@ const redis = require('../config/redis');
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,   // 15 minutes
 
-    max: 5,                   // 100 requests/IP
+    max: 100,                   // 100 requests/IP
 
     standardHeaders: true,
 
