@@ -1,29 +1,54 @@
-name: Node CI
+# Workflow name shown in the GitHub Actions tab
+name: Node CI/CD
 
+# Trigger the workflow whenever code is pushed to the main branch
 on:
   push:
     branches:
       - main
 
+# Define the jobs to execute
 jobs:
-  build:
-    runs-on: ubuntu-latest #everytime github starts a fresh vm when this workflow runs
 
+  # Build and Deploy job
+  build:
+
+    # GitHub provides a fresh Ubuntu virtual machine
+    runs-on: ubuntu-latest
+
+    # Steps executed one after another
     steps:
-      # git clone <repository>
+
+      # Step 1: Download (clone) the repository into the runner
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Install Node.js 20
+      # Step 2: Install the required Node.js version
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
-      # Install dependencies
+      # Step 3: Install all project dependencies
+      # Uses package-lock.json for reproducible installs
       - name: Install Dependencies
         run: npm ci
 
-      # Build Docker image
+      # Step 4: Build the Docker image
+      # This verifies that the Dockerfile is valid and the application
+      # can be successfully containerized.
       - name: Build Docker Image
         run: docker build -t supplychain-app .
+
+      # Step 5: Install Railway CLI on the GitHub runner
+      # Required to deploy the application to Railway.
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      # Step 6: Deploy the application to Railway
+      # RAILWAY_TOKEN is stored securely in GitHub Secrets.
+      # railway up uploads the project and deploys it.
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up
